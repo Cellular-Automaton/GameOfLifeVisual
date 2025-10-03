@@ -1,0 +1,69 @@
+import { useState, useCallback } from 'react';
+
+export const useGrid = (defaultRows = 10, defaultCols = 10) => {
+    const [cells, setCells] = useState([]);
+    const [rows, setRows] = useState(defaultRows);
+    const [cols, setCols] = useState(defaultCols);
+    const [stats, setStats] = useState({ totalCells: 0, aliveCells: 0 });
+
+    // Create a grid with specified rows and columns
+    const createGrid = useCallback((newRows = 10, newCols = 10) => {
+        const newCells = [];
+
+        for (let row = 0; row < newRows; row++) {
+            for (let col = 0; col < newCols; col++) {
+                newCells.push({ 
+                    id: `${row}-${col}`, 
+                    row,
+                    col,
+                    state: 0 // 0 = dead, 1 = alive
+                });
+            }
+        }
+        setStats({ totalCells: newRows * newCols, aliveCells: 0 });
+        setCells(newCells);
+        setRows(newRows);
+        setCols(newCols);
+    }, [rows, cols]);
+
+    // Clear the grid (set all cells to dead)
+    const clearGrid = useCallback(() => {
+        setCells(cells.map(cell => ({ ...cell, state: 0 })));
+    }, [cells]);
+
+    // Empty the grid (remove all cells)
+    const emptyGrid = useCallback(() => {
+        setCells([]);
+        setRows(0);
+        setCols(0);
+    }, []);
+
+    // Toggle the state of a cell (alive <-> dead)
+    const toggleCell = useCallback((cellId) => {
+        setCells(cells.map(cell => 
+            cell.id === cellId ? { ...cell, state: cell.state === 0 ? 1 : 0 } : cell
+        ));
+        const aliveCount = cells.reduce((count, cell) => count + (cell.id === cellId ? (cell.state === 0 ? 1 : 0) : cell.state), 0);
+        setStats(prevStats => ({ ...prevStats, aliveCells: aliveCount }));
+    }, [cells]);
+
+    // Get the states of all cells
+    const getAllStates = useCallback(() => {
+        return cells.map(cell => ({ id: cell.id, state: cell.state }));
+    }, [cells]);
+
+    return { 
+        // Values
+        cells, 
+        rows,
+        cols,
+        stats,
+        
+        // Functions
+        createGrid,
+        clearGrid,
+        emptyGrid,
+        toggleCell,
+        getAllStates
+    };
+};
