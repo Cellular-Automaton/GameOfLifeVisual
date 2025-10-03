@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGrid } from './hooks/useGrid';
 import PixiRenderer from './components/PixiRenderer';
+import { Button, ButtonGroup, Slider, TextField } from '@mui/material';
 
 function App() {
     const { 
@@ -11,26 +12,144 @@ function App() {
 
         createGrid, 
         toggleCell, 
-        getAllStates 
+        getAllStates,
+        clearGrid,
+        getCellStates,
+        updateCellStates
     } = useGrid(); // Custom hook to manage the grid
-    
+    const [parameters, setParameters] = useState({
+        width: 10,
+        height: 10
+    });
+    const [isRunning, setIsRunning] = useState(false);
+
     useEffect(() => {
-        createGrid(10, 10);
+        window.addEventListener('message', (message) => {
+            const msg = message.data;
+            console.log("Message from host:", msg);
+
+            if (msg.action === "UPDATE_TABLE") {
+                // Update the grid with the new table data
+                const { table } = msg.data;
+                console.log("Updating table with:", table);
+                updateCellStates(table);
+            }
+        })
+    }, [])
+
+    useEffect(() => {
+        createGrid(parameters.width, parameters.height);
     }, [createGrid]);
+
+    useEffect(() => {
+        if (parameters.width <= 0 || parameters.height <= 0 || !parameters.width || !parameters.height)
+            return;
+
+        createGrid(parameters.width, parameters.height);
+    }, [parameters]);
     
     const handleCellClick = (cellId) => {
         toggleCell(cellId);
     };
     
+    const handleClearGrid = () => {
+        clearGrid();
+    };
+
     const handleExportData = () => {
         const data = getAllStates();
         console.log("� Export complet:", data);
         alert(`Grille exportée ! ${stats.aliveCells} cellules vivantes sur ${stats.totalCells}`);
     };
 
+    const handlePlay = () => {
+        setIsRunning(true);
+
+        window.electronAPI.sendToHost({
+            action: "PLAY_SIMULATION",
+            data: {
+                parameters: parameters,
+                table: getCellStates()
+            }
+        })
+    };
+
+    const handlePause = () => {
+        setIsRunning(false);
+
+        window.electronAPI.sendToHost({
+            action: "PAUSE_SIMULATION"
+        });
+    };
+
     return (
-            <div className='h-full w-full'>
+            <div className='h-full w-full relative'>
                 
+                <div id='parameters-panel' className='absolute text-black top-1/2 right-2 transform -translate-y-1/2 min-w-80 w-1/5 z-10 bg-white/80 backdrop-blur-md rounded-md p-2 shadow-md'>
+                    <div className='mb-2 font-bold text-center text-2xl'>Parameters</div>
+                    <div className='flex flex-col gap-4 mb-4'>
+                        {
+                            Object.entries(parameters).map(([key, value]) => (
+                                <TextField
+                                    key={key}
+                                    label={key.charAt(0).toUpperCase() + key.slice(1)}
+                                    value={value}
+                                    type='number'
+                                    slotProps={{ htmlInput: { min: 1, max: 100 } }}
+                                    onChange={(e) => {
+                                        let val = e.target.value;
+                                        if (Number(val) > 100)
+                                            val = "100";
+                                        if (Number(val) < 1)
+                                            val = "1";
+                                        if (val.length > 3)
+                                            val = val.slice(0, 3);
+                                        setParameters({ ...parameters, [key]: val })}
+                                    }
+                                    className='mb-2 text-white border-white'
+                                />
+                            ))
+                        }
+                    </div>
+
+                    <div className='w-full flex flex-col justify-center gap-2'>
+                            <Button variant='contained' className='w-full' onClick={handleClearGrid}>
+                                Clear
+                            </Button>
+                        <ButtonGroup className='w-full'>
+                            <Button variant='contained' onClick={handleExportData} className='w-full'>
+                                Export Data
+                            </Button>
+                            <Button variant='contained' className='w-full'>
+                                Import Data
+                            </Button>
+                        </ButtonGroup>
+                    </div>
+                </div>
+
+                <div id='player-panel'
+                    className='absolute flex flex-col bottom-4 left-1/2 transform -translate-x-1/2 text-black
+                        min-w-80 w-1/2 z-10 bg-white/80 backdrop-blur-md rounded-md
+                        py-2 px-5 shadow-md justify-center items-center gap-2'>
+                    <ButtonGroup className='justify-center w-1/5'>
+                        <Button variant='contained' className='w-full' disabled={isRunning} onClick={handlePlay}>
+                            Play
+                        </Button>
+                        <Button variant='contained' className='w-full' disabled={!isRunning} onClick={handlePause}>
+                            Pause
+                        </Button>
+                    </ButtonGroup>
+                    <Slider
+                        className='w-1/2'
+                        disabled={!isRunning}
+                        // value={speed}
+                        onChange={(e, newValue) => setSpeed(newValue)}
+                        aria-labelledby="continuous-slider"
+                        min={1}
+                        max={100}
+                    />
+                </div>
+
                 <PixiRenderer 
                     cells={cells}
                     rows={rows}

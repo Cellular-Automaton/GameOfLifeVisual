@@ -76,7 +76,7 @@ const PixiRenderer = ({ cells, rows, cols, onCellClick }) => {
         });
 
         viewport.clampZoom({
-            minScale: 0.2,
+            minScale: 0.05,
             maxScale: 3
         });
 
@@ -121,7 +121,6 @@ const PixiRenderer = ({ cells, rows, cols, onCellClick }) => {
         newGraphics.buttonMode = true;
         newGraphics.x = cell.row * (cellSize + 10);
         newGraphics.y = cell.col * (cellSize + 10);
-        console.log(dragInfoRef);
 
         newGraphics.on('pointerdown', () => {
             dragInfoRef.current.active = true;
