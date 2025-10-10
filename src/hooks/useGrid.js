@@ -83,6 +83,7 @@ export const useGrid = (defaultRows = 10, defaultCols = 10) => {
         toggleCell,
         getAllStates,
         getCellStates,
-        updateCellStates
+        updateCellStates,
+        setFrames
     };
 };

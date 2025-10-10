@@ -9,19 +9,22 @@ function App() {
         rows, 
         cols, 
         stats,
+        frames,
 
         createGrid, 
         toggleCell, 
         getAllStates,
         clearGrid,
         getCellStates,
-        updateCellStates
+        updateCellStates,
+        setFrames
     } = useGrid(); // Custom hook to manage the grid
     const [parameters, setParameters] = useState({
         width: 10,
         height: 10
     });
     const [isRunning, setIsRunning] = useState(false);
+    const [currentFrame, setCurrentFrame] = useState(0);
 
     useEffect(() => {
         window.addEventListener('message', (message) => {
@@ -33,6 +36,8 @@ function App() {
                 const { table } = msg.data;
                 console.log("Updating table with:", table);
                 updateCellStates(table);
+                setCurrentFrame(currentFrame => currentFrame + 1);
+                setFrames(prev => [...prev, table]);
             }
         })
     }, [])
@@ -48,6 +53,13 @@ function App() {
         createGrid(parameters.width, parameters.height);
     }, [parameters]);
     
+    useEffect(() => {
+        if (currentFrame <= 0 || currentFrame > frames.length)
+            return;
+
+        updateCellStates(frames[currentFrame - 1]);
+    }, [currentFrame]);
+
     const handleCellClick = (cellId) => {
         toggleCell(cellId);
     };
@@ -65,6 +77,8 @@ function App() {
     const handlePlay = () => {
         setIsRunning(true);
 
+        setFrames([]);
+        setFrames(prev => [...prev, getCellStates()]);
         window.electronAPI.sendToHost({
             action: "PLAY_SIMULATION",
             data: {
@@ -139,15 +153,21 @@ function App() {
                             Pause
                         </Button>
                     </ButtonGroup>
-                    <Slider
-                        className='w-1/2'
-                        disabled={!isRunning}
-                        // value={speed}
-                        onChange={(e, newValue) => setSpeed(newValue)}
-                        aria-labelledby="continuous-slider"
-                        min={1}
-                        max={100}
-                    />
+                    <div className='w-full flex flex-col'> 
+                        <label className='flex w-full font-bold justify-start'>
+                            Frames
+                        </label>
+                        <Slider
+                            className='w-1/2'
+                            disabled={isRunning}
+                            value={currentFrame}
+                            onChange={(e, newValue) => setCurrentFrame(newValue)}
+                            aria-labelledby="continuous-slider"
+                            min={1}
+                            max={frames.length}
+                        />
+                        <span className='flex w-full justify-end'>{currentFrame} / {frames.length}</span>
+                    </div>
                 </div>
 
                 <PixiRenderer 
