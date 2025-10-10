@@ -77,6 +77,7 @@ function App() {
     const handlePlay = () => {
         setIsRunning(true);
 
+        setCurrentFrame(1);
         setFrames([]);
         setFrames(prev => [...prev, getCellStates()]);
         window.electronAPI.sendToHost({
