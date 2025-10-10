@@ -16,7 +16,7 @@ export default defineConfig({
     lib: {
       entry: 'src/main.jsx',
       name: 'MonPlugin',
-      fileName: 'plugin',
+      fileName: 'GameOfLifeVisual',
       formats: ['es'],
     },
     rollupOptions: {
