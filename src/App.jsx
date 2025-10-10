@@ -107,6 +107,7 @@ function App() {
                             Object.entries(parameters).map(([key, value]) => (
                                 <TextField
                                     key={key}
+                                    disabled={isRunning}
                                     label={key.charAt(0).toUpperCase() + key.slice(1)}
                                     value={value}
                                     type='number'
@@ -128,14 +129,14 @@ function App() {
                     </div>
 
                     <div className='w-full flex flex-col justify-center gap-2'>
-                            <Button variant='contained' className='w-full' onClick={handleClearGrid}>
+                            <Button variant='contained' className='w-full' onClick={handleClearGrid} disabled={isRunning}>
                                 Clear
                             </Button>
                         <ButtonGroup className='w-full'>
-                            <Button variant='contained' onClick={handleExportData} className='w-full'>
+                            <Button variant='contained' onClick={handleExportData} className='w-full' disabled={isRunning}>
                                 Export Data
                             </Button>
-                            <Button variant='contained' className='w-full'>
+                            <Button variant='contained' className='w-full' disabled={isRunning}>
                                 Import Data
                             </Button>
                         </ButtonGroup>
