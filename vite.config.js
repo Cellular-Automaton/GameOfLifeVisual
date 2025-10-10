@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     lib: {
       entry: 'src/main.jsx',
-      name: 'MonPlugin',
+      name: 'GameOfLifeVisual',
       fileName: 'GameOfLifeVisual',
       formats: ['es'],
     },
