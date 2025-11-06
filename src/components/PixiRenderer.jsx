@@ -58,7 +58,7 @@ const PixiRenderer = ({ cells, rows, cols, onCellClick }) => {
         appRef.current = app;
 
         await app.init({
-            background: 0x1B3C53,
+            background: 0x574536,
             resizeTo: window,
         });
 
@@ -116,7 +116,7 @@ const PixiRenderer = ({ cells, rows, cols, onCellClick }) => {
         const newGraphics = new Graphics();
 
         newGraphics.rect(0, 0, cellSize, cellSize);
-        newGraphics.fill(cell.state === 1 ? 0x212121 : 0xF7F7F7);
+        newGraphics.fill(cell.state === 1 ? 0x235754 : 0xF7e);
         newGraphics.interactive = true;
         newGraphics.buttonMode = true;
         newGraphics.x = cell.row * (cellSize + 10);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGrid } from './hooks/useGrid';
 import PixiRenderer from './components/PixiRenderer';
 import { Button, ButtonGroup, Slider, TextField } from '@mui/material';
@@ -25,22 +25,58 @@ function App() {
     });
     const [isRunning, setIsRunning] = useState(false);
     const [currentFrame, setCurrentFrame] = useState(0);
+    const [pendingImportTable, setPendingImportTable] = useState([]);
 
     useEffect(() => {
-        window.addEventListener('message', (message) => {
-            const msg = message.data;
-            console.log("Message from host:", msg);
+        window.addEventListener('message', (event) => {
+            const message = event.data;
+            const data = message.data;
+            console.log("Data from host:", data);
 
-            if (msg.action === "UPDATE_TABLE") {
+            if (message.action === "UPDATE_TABLE") {
                 // Update the grid with the new table data
-                const { table } = msg.data;
+                const { table } = data;
                 console.log("Updating table with:", table);
                 updateCellStates(table);
                 setCurrentFrame(currentFrame => currentFrame + 1);
                 setFrames(prev => [...prev, table]);
             }
-        })
+
+            if (message.action === "PARAMETERS") {
+                const { parameters: newParameters } = data;
+                console.log(data);
+
+                console.log("Updating parameters with:", newParameters);
+            }
+
+            if (message.action === "IMPORTED_DATA") {
+                const { table, parameters: params } = data;
+                console.log("Importing data:", table, params);
+                
+                setParameters(prev => {
+                    Object.entries(params).forEach(([key, value]) => {
+                        if (key in prev) {
+                            console.log(`Setting parameter ${key} to ${value} (was ${prev[key]})`);
+                            prev[key] = value;
+                        }
+                    });
+                    return { ...prev };
+                })
+                setPendingImportTable(table);
+                setCurrentFrame(0);
+            }
+        });
     }, [])
+
+    useEffect(() => {
+        if (pendingImportTable.length <= 0 || cells.length !== pendingImportTable.length)
+            return;
+
+        updateCellStates(pendingImportTable);
+        setFrames([pendingImportTable]);
+        setCurrentFrame(1);
+        setPendingImportTable([]);
+    }, [pendingImportTable, cells.length])
 
     useEffect(() => {
         createGrid(parameters.width, parameters.height);
@@ -51,7 +87,7 @@ function App() {
             return;
 
         createGrid(parameters.width, parameters.height);
-    }, [parameters]);
+    }, [parameters.width, parameters.height]);
     
     useEffect(() => {
         if (currentFrame <= 0 || currentFrame > frames.length)
@@ -69,9 +105,28 @@ function App() {
     };
 
     const handleExportData = () => {
-        const data = getAllStates();
-        console.log("� Export complet:", data);
-        alert(`Grille exportée ! ${stats.aliveCells} cellules vivantes sur ${stats.totalCells}`);
+        const data = getCellStates();
+        const params = {};
+
+        Object.entries(parameters).forEach(([key, value]) => {
+            params[key] = {
+                value: value,
+                type: typeof value
+            };
+        });
+        window.electronAPI.sendToHost({
+            action: "EXPORT",
+            data: {
+                table: data,
+                parameters: params
+            }
+        });
+    };
+
+    const handleImportData = () => {
+        window.electronAPI.sendToHost({
+            action: "IMPORT"
+        });
     };
 
     const handlePlay = () => {
@@ -136,7 +191,7 @@ function App() {
                             <Button variant='contained' onClick={handleExportData} className='w-full' disabled={isRunning}>
                                 Export Data
                             </Button>
-                            <Button variant='contained' className='w-full' disabled={isRunning}>
+                            <Button variant='contained' onClick={handleImportData} className='w-full' disabled={isRunning}>
                                 Import Data
                             </Button>
                         </ButtonGroup>
