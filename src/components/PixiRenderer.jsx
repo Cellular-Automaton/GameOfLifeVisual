@@ -116,7 +116,7 @@ const PixiRenderer = ({ cells, rows, cols, onCellClick }) => {
         const newGraphics = new Graphics();
 
         newGraphics.rect(0, 0, cellSize, cellSize);
-        newGraphics.fill(cell.state === 1 ? 0x235754 : 0xF7e);
+        newGraphics.fill(cell.state === 1 ? 0x111111 : 0xDDDDDD);
         newGraphics.interactive = true;
         newGraphics.buttonMode = true;
         newGraphics.x = cell.row * (cellSize + 10);
